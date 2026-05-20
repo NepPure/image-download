@@ -40,8 +40,14 @@ jobs:
           gzip -f "archive/${{ steps.prep-name.outputs.safe_name }}-arm64.tar"
           docker image rm "$IMAGE_NAME"
 
-      - name: Upload archives
+      - name: Upload amd64 archive
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.prep-name.outputs.safe_name }}-archives
-          path: archive/
+          name: ${{ steps.prep-name.outputs.safe_name }}-amd64
+          path: archive/${{ steps.prep-name.outputs.safe_name }}-amd64.tar.gz
+
+      - name: Upload arm64 archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prep-name.outputs.safe_name }}-arm64
+          path: archive/${{ steps.prep-name.outputs.safe_name }}-arm64.tar.gz
