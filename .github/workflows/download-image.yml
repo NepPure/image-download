@@ -29,15 +29,7 @@ jobs:
       - name: Pull amd64 image and save archive
         run: |
           docker pull --platform linux/amd64 "$IMAGE_NAME"
-          docker save --output "archive/${{ steps.prep-name.outputs.safe_name }}-amd64.tar" "$IMAGE_NAME"
-          gzip -f "archive/${{ steps.prep-name.outputs.safe_name }}-amd64.tar"
-          docker image rm "$IMAGE_NAME"
-
-      - name: Pull arm64 image and save archive
-        run: |
-          docker pull --platform linux/arm64 "$IMAGE_NAME"
-          docker save --output "archive/${{ steps.prep-name.outputs.safe_name }}-arm64.tar" "$IMAGE_NAME"
-          gzip -f "archive/${{ steps.prep-name.outputs.safe_name }}-arm64.tar"
+          docker save "$IMAGE_NAME" | gzip > "archive/${{ steps.prep-name.outputs.safe_name }}-amd64.tar.gz"
           docker image rm "$IMAGE_NAME"
 
       - name: Upload amd64 archive
@@ -45,6 +37,12 @@ jobs:
         with:
           name: ${{ steps.prep-name.outputs.safe_name }}-amd64
           path: archive/${{ steps.prep-name.outputs.safe_name }}-amd64.tar.gz
+
+      - name: Pull arm64 image and save archive
+        run: |
+          docker pull --platform linux/arm64 "$IMAGE_NAME"
+          docker save "$IMAGE_NAME" | gzip > "archive/${{ steps.prep-name.outputs.safe_name }}-arm64.tar.gz"
+          docker image rm "$IMAGE_NAME"
 
       - name: Upload arm64 archive
         uses: actions/upload-artifact@v4
