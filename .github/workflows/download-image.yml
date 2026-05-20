@@ -1,0 +1,47 @@
+name: Download Astrbot Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: Docker image name to download
+        required: true
+        default: soulter/astrbot-t2i-service:latest
+
+jobs:
+  download-archive:
+    name: Download amd64 and arm64 image archives
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ${{ github.event.inputs.image_name }}
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Prepare archive name
+        id: prep-name
+        run: |
+          mkdir -p archive
+          safe_name=$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+          echo "safe_name=$safe_name" >> "$GITHUB_OUTPUT"
+
+      - name: Pull amd64 image and save archive
+        run: |
+          docker pull --platform linux/amd64 "$IMAGE_NAME"
+          docker save --output "archive/${{ steps.prep-name.outputs.safe_name }}-amd64.tar" "$IMAGE_NAME"
+          gzip -f "archive/${{ steps.prep-name.outputs.safe_name }}-amd64.tar"
+          docker image rm "$IMAGE_NAME"
+
+      - name: Pull arm64 image and save archive
+        run: |
+          docker pull --platform linux/arm64 "$IMAGE_NAME"
+          docker save --output "archive/${{ steps.prep-name.outputs.safe_name }}-arm64.tar" "$IMAGE_NAME"
+          gzip -f "archive/${{ steps.prep-name.outputs.safe_name }}-arm64.tar"
+          docker image rm "$IMAGE_NAME"
+
+      - name: Upload archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prep-name.outputs.safe_name }}-archives
+          path: archive/
